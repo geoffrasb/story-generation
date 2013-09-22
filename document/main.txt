@@ -1,0 +1,4 @@
+todo:
+    sort out info. on slides
+
+applications:
