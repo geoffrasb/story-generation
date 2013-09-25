@@ -14,10 +14,10 @@ type Key = Int
 
 
 data EntityInfo = 
-    EntityInfo {
-        addr  :: [Key],   --[who i am, who contains me, .....]
-        next  :: [Entity],
-        prev  :: [Entity]
+    EntityInfo {          --problem: should I know where the entity belongs to from the entity? yes
+        addr  :: [Key],   --[outter to inner] 
+        next  :: [Fabula],
+        prev  :: [Fabula]
     }
     deriving(Eq,Ord,Show)
 
@@ -46,7 +46,38 @@ instance Eq Fabula where -- weak equality
 type Plot = [Fabula]
 
 
-insert :: Fabula -> Fabula -> (Entity,Fabula)
+--operation on addr
+pushAddr :: Key -> Entity -> Entity
+pushAddr k ((EntityInfo addr n p), fab) = (EntityInfo (k:addr) n p, fab)
+popAddr  :: Entity -> (Key,Entity)
+popAddr ((EntityInfo (k:addrs) n p), fab) = (k, (EntityInfo addrs n p, fab))
+
+insert :: Either Fabula Entity -> Fabula -> (Entity,Fabula)
+insert f_or_e (Fabula evt2 table2 keycntr2) = 
+    (newEntity, Fabula evt2 alteredTable2 (keycntr2+1))
+    where
+        newEntity = 
+            case f_or_e of
+                (Left _) -> 
+                    EntityInfo [keycntr2] [] []
+                (Right ((EntityInfo addr n p),_)) ->
+                    EntityInfo (keycntr2:addr) n p -- is here correct according to the semantics of addr?
+        alteredTable2 = 
+            case newEvent of
+                (SingleEvent _) -> 
+                    Fabula evt2 (Map.insert keycntr2 newEvent table2) (keycntr2+1)
+                (Fabula evt1 table1 keycntr1) ->
+                    Fabula evt2 (Map.insert keycntr2 updatedFabula table2) (keycntr2+1))
+                    where
+                        updatedFabula = Fabula evt1 (fmap (pushAddr keycntr2) table1) keycntr1
+            where newEvent =
+                case f_or_e of
+                    (Left e) -> e
+                    (Right (_,e)) -> e
+        
+
+insert _ (SingleEvent _) = error "Cannot insert a Fabula into a SingleEvent."
+
 remove :: [Key] -> Fabula -> Fabula
 update :: Entity -> Fabula -> Fabula
 conseqLink :: (Entity, Entity) -> Fabula -> Fabula
