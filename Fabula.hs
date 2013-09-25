@@ -14,72 +14,97 @@ data Event =
     Event {             -- the representation should be considered
         name :: String,
         characters :: [String]
-    } deriving (Eq, Ord, Show)
+    } 
+    | AbsEvent {
+        name :: String,
+        characters :: [String],
+        innerFab :: Fabula
+    }
+    deriving (Ord, Show)
+
+evtName :: Event -> String
+evtName (Event n _) = n
+evtName (AbsEvent n _ _) = n
+invoChar :: Event -> [String]
+invoChar (Event _ c) = c
+invoChar (AbsEvent _ c _) = c
+
+instance Eq Event where
+    a == b = (evtName a==evtName b) && (invoChar a==invoChar b)
 
 fromPred :: Predicate -> Event
 fromPred (n,_,c) = Event{name=n, characters=c}
-
 predOf :: Event -> Predicate
 predOf Event{name=n, characters=c} = (n, length c,c)
 
 data Plot = EmptyPlot | PlotPiece Event Plot
 
-type FabulaEntity = (Event,Int,Int) -- eventId,fabulaId
-data Entity = 
-      Entity {
-        eid :: Int,     --event id, every event as a unique id
-        fid :: Int,     --fabula id
-        e   :: Event,
-        next:: [Entity],
-        prev:: [Entity]
-      }
-    | AbstractEntity Fabula
-    deriving (Show)
-
-instance Eq Entity where -- weak equality
-    Entity{eid=ea, fid=fa} == Entity{eid=eb, fid=fb} = ea==eb && fa==fb
-    AbstractEntity fa == AbstractEntity fb           = fa==fb
---need pattern equality
 
 
 ------ Fabula
 
+
+data EntityInfo = EntityInfo {
+    eid      :: Int, 
+    fid      :: [Int],
+    next     :: [Entity],
+    prev     :: [Entity]
+}deriving(Eq,Ord,Show)
+
+
 data Fabula = Fabula {
-    key :: Int,
-    table :: Map.Map Int Entity
+    key     :: Int,
+    evtKeyCounter :: Int,
+    table   :: Map.Map Int (EntityInfo, Event)
 }deriving (Show)
 
 instance Eq Fabula where -- weak equality
     Fabula{key=ka} == Fabula{key=kb} = ka==kb
 
-empty fabId= Fabula fabId Map.empty
+emptyFabula fabId= Fabula fabId 0 Map.empty
 
 
+---------- Container
 
+data Container = Container {
+    key     :: Int,
+    fabKeyCounter :: Int,
+    table   :: Map.Map Int Fabula
+}
 
+emptyContainer = Container 0 Map.empty
+
+addNewFabula :: Container -> (Fabula,Container)
+addNewFabula Container{fabKeyCounter=c, table=t} = 
+    Container{fabKeyCounter=c+1, table=Map.insert c (emptyFabula c) t}
+    
+addFabula    :: Fabula -> Container -> Container --throw out the original key of the fabula
+-- just as extract all fabula in the original fabula, change their keys and insert to the container
+addFabula Fabula{ evtKeyCounter=fekc, table=entityTable} Container{key=ck, fabKeyCounter=cfkc, table=fabulaTable} =
+    Container{ key=ck, fabKeyCounter=cfkc+1, table=newTable}
+    where
+        newTable = Map.insert cfkc (Fabula cfkc fekc keyChangedEntityTable) fabulaTable
+        keyChangedEntityTable = fmap () entityTable
+
+removeFabula :: Fabula -> Container -> Container
+removeFabula Fabula{key=k} c = removeFabulaWithKey k c
+removeFabulaWithKey :: Int -> Container -> Container
+removeFabulaWithKey k Container{keyCounter=c, table=t} =
+    Container{keyCounter=c, table=Map.delete t}
 
 
 ------ Operations
 
 --select :: FabulaEntity -> Fabula -> Maybe FabulaEntity
 --selectEvent :: Event -> Fabula -> [FabulaEntity]
-insert :: Event -> Fabula -> (FabulaEntity,Fabula)
-remove :: FabulaEntity -> Fabula -> Fabula
-addConseqOf :: FabulaEntity -> Fabula -> Either [FabulaEntity] [Event] -> Fabula
-addCauseOf :: FabulaEntity -> Fabula -> Either [FabulaEntity] [Event] -> Fabula
-conseqOf :: FabulaEntity -> Fabula -> [FabulaEntity]
-conseqOf fe fab = 
-    case snd $ Map.lookup fe fab of
-        Just a  -> a
-        Nothing -> undefined
-causeOf :: FabulaEntity -> Fabula -> [FabulaEntity]
-causeOf fe fab =
-    case fst $ Map.lookup fe fab of
-        Just a  -> a
-        Nothing -> undefined
-abstract
-implement
-
+insert :: Event -> Fabula -> (Entity,Fabula)
+remove :: Entity -> Fabula -> Fabula
+addConseqOf :: Entity -> Fabula -> Either Entity Event -> Fabula
+addCauseOf  :: Entity -> Fabula -> Either Entity Event -> Fabula
+conseqOf :: Entity -> [Entity]
+causeOf  :: Entity -> [Entity]
+abstract   :: Entity -> Fabula -> (Entity,Fabula)
+deabstract :: Entity -> Fabula -> Fabula
 
 
 

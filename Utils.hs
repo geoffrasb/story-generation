@@ -9,6 +9,8 @@ import qualified Data.List as List
 
 type Predicate = (String, Int, [String]) -- pred, arity, [parameter]
 
+fst3 (a,_,_) = a
+snd3 (_,a,_) = a
 thd3 (_,_,a) = a
 
 -- write an universal DFS
