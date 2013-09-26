@@ -1,13 +1,9 @@
 module Fabula (
-    Event(..),
-    Plot,
-    Fabula,
-    empty
 ) where
 
 import qualified Data.Set as Set
 import qualified Data.Map as Map
-import qualified Ddta.List as List
+import qualified Data.List as List
 import Utils
 
 type Key = Int
@@ -27,7 +23,7 @@ data Fabula =
     } 
     | Fabula {
         evtPred    :: Predicate,
-        table      :: Map.Map Int Entity
+        table      :: Map.Map Int Entity,
         keyCounter :: Key
     }
     deriving (Ord, Show)
@@ -53,31 +49,29 @@ popAddr  :: Entity -> (Key,Entity)
 popAddr ((EntityInfo (k:addrs) n p), fab) = (k, (EntityInfo addrs n p, fab))
 
 insert :: Either Fabula Entity -> Fabula -> (Entity,Fabula)
-insert f_or_e (Fabula evt2 table2 keycntr2) = 
-    (newEntity, Fabula evt2 alteredTable2 (keycntr2+1))
+insert f_or_e fabula2@(Fabula evt2 table2 keycntr2) = 
+    (newEntity, newFabula2)
     where
-        newEntity = 
+        newEntity = (newEntityInfo, finallyAddedFabula)
+        newFabula2 = Fabula evt2 (Map.insert keycntr2 newEntity table2) (keycntr2+1)
+        (newEntityInfo, insertFabula) = 
             case f_or_e of
-                (Left _) -> 
-                    EntityInfo [keycntr2] [] []
-                (Right ((EntityInfo addr n p),_)) ->
-                    EntityInfo (keycntr2:addr) n p -- is here correct according to the semantics of addr?
-        alteredTable2 = 
-            case newEvent of
+                (Left fab) -> 
+                    (EntityInfo [keycntr2] [] [],    fab)
+                (Right ((EntityInfo addr n p), fab)) ->
+                    (EntityInfo (keycntr2:addr) n p, fab)
+                    -- current method of updating the addr may be wrong
+        finallyAddedFabula = 
+            case insertFabula of
                 (SingleEvent _) -> 
-                    Fabula evt2 (Map.insert keycntr2 newEvent table2) (keycntr2+1)
+                    insertFabula
                 (Fabula evt1 table1 keycntr1) ->
-                    Fabula evt2 (Map.insert keycntr2 updatedFabula table2) (keycntr2+1))
-                    where
-                        updatedFabula = Fabula evt1 (fmap (pushAddr keycntr2) table1) keycntr1
-            where newEvent =
-                case f_or_e of
-                    (Left e) -> e
-                    (Right (_,e)) -> e
+                    Fabula evt1 (fmap (pushAddr keycntr2) table1) keycntr1
+                    -- current method of updating the addr may be wrong
         
-
 insert _ (SingleEvent _) = error "Cannot insert a Fabula into a SingleEvent."
 
+{-
 remove :: [Key] -> Fabula -> Fabula
 update :: Entity -> Fabula -> Fabula
 conseqLink :: (Entity, Entity) -> Fabula -> Fabula
@@ -86,7 +80,7 @@ conseqOf :: Entity -> [Entity]
 causeOf  :: Entity -> [Entity]
 abstract   :: Entity -> Fabula -> (Entity,Fabula)
 deabstract :: Entity -> Fabula -> Fabula
-
+-}
 
 
 
