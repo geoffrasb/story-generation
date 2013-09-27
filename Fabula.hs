@@ -1,4 +1,8 @@
 module Fabula (
+    EntityInfo(..),
+    Fabula(..),
+    Entity,
+    Plot
 ) where
 
 import qualified Data.Set as Set
@@ -6,16 +10,26 @@ import qualified Data.Map as Map
 import qualified Data.List as List
 import Utils
 
-type Key = Int
+-- if the data type of key changed, only these three lines should be modified.
+data Key = Key Int deriving(Show,Eq,Ord)
+nextKey (Key a) = Key (a+1)
+bottomKey = Key 0
 
+-- KeyGen should be singleton: keyGen
+data KeyGen = KeyGen Key deriving(Show)
+getKey (KeyGen a) = (a, KeyGen (nextKey a))
+keyGen = KeyGen bottomKey
 
 data EntityInfo = 
-    EntityInfo {          --problem: should I know where the entity belongs to from the entity? yes
-        addr  :: [Key],   --[outter to inner] 
+    EntityInfo {         
+        key   :: Key,
+        infab :: Maybe Fabula,
         next  :: [Fabula],
         prev  :: [Fabula]
     }
-    deriving(Eq,Ord,Show)
+    deriving(Ord,Show)
+instance Eq EntityInfo where
+    EntityInfo ka fa _ _ == EntityInfo kb fb _ _ = ka==kb && fa=fb
 
 data Fabula = 
     SingleEvent {
@@ -23,8 +37,7 @@ data Fabula =
     } 
     | Fabula {
         evtPred    :: Predicate,
-        table      :: Map.Map Int Entity,
-        keyCounter :: Key
+        table      :: Map.Map Key Entity
     }
     deriving (Ord, Show)
 
@@ -32,7 +45,7 @@ type Entity = (EntityInfo, Fabula)
 
 evtInfo :: Fabula -> Predicate
 evtInfo (SingleEvent p) = p
-evtInfo (Fabula p _ _) = p
+evtInfo (Fabula p _) = p
 
 instance Eq Fabula where -- weak equality
     a == b = evtInfo a==evtInfo b
@@ -42,7 +55,22 @@ instance Eq Fabula where -- weak equality
 type Plot = [Fabula]
 
 
+
+
+-- Fabula construction: every fabula should get a unique ID
+newEntity :: Fabula -> KeyGen -> (Entity, KeyGen)
+newEntity fab kg = ((EntityInfo{ key=nkey, infab=Nothing, next=[], prev=[]}, fab),
+                    newkg)
+                   where
+                    (nkey,newkg) = getKey kg
+
+moveIn  :: Entity -> Entity -> Entity
+moveOut :: Entity -> Entity -> Entity
+
+
+
 --operation on addr
+{-
 pushAddr :: Key -> Entity -> Entity
 pushAddr k ((EntityInfo addr n p), fab) = (EntityInfo (k:addr) n p, fab)
 popAddr  :: Entity -> (Key,Entity)
@@ -70,7 +98,7 @@ insert f_or_e fabula2@(Fabula evt2 table2 keycntr2) =
                     -- current method of updating the addr may be wrong
         
 insert _ (SingleEvent _) = error "Cannot insert a Fabula into a SingleEvent."
-
+-}
 {-
 remove :: [Key] -> Fabula -> Fabula
 update :: Entity -> Fabula -> Fabula
