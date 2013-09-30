@@ -20,6 +20,10 @@ data KeyGen = KeyGen Key deriving(Show)
 getKey (KeyGen a) = (a, KeyGen (nextKey a))
 keyGen = KeyGen bottomKey
 
+
+
+
+
 data EntityInfo = 
     EntityInfo {         
         key   :: Key,
@@ -50,55 +54,59 @@ instance Functor Fabula where
 
 type Entity = (EntityInfo, Fabula)
 
-evtInfo :: Fabula -> Predicate
-evtInfo (SingleEvent p) = p
-evtInfo (Fabula p _) = p
+
+
+-- new data structure design
+
+data Event = Event Predicate deriving(Show,Eq)
+
+data BrightTree a = BrightNode {
+    key :: Key,
+    lab :: a,
+    up  :: Maybe (BrightTree a),
+    down:: Map.Map Key (BrightTree a),
+    next:: [BrightTree a],
+    prev:: [BrightTree a]
+    }
+instance Eq (BrightTree a) where
+    BrightNode{key=k1, lab=l1} == BrightNode{key=k2, lab=l2} = k1==k2 && l1==l2
+instance Functor BrightTree where
+    fmap f (BrightNode key lab up down next prev) = 
+        BrightNode key (f lab) up (fmap (\bt->fmap f bt) down) next prev
+
+type Fabula = BrightTree Event
 
 
 
---data Plot = EmptyPlot | PlotPiece Predicate Plot
+
 type Plot = [Fabula]
 
-
-
-
--- Fabula construction: every fabula should get a unique ID
-newEntity :: Fabula -> KeyGen -> (Entity, KeyGen)
-newEntity fab kg = ((EntityInfo{ key=nkey, inEnt=Nothing, next=[], prev=[]}, fab),
-                    newkg)
+newFabula :: Event -> KeyGen -> (Fabula, KeyGen)
+newFabula evt kg = (BrightNode nkey evt Nothing Map.empty [] [], newkg)
                    where
                     (nkey,newkg) = getKey kg
 
 
-{-
-    operations below may be constructed from fmap...?
 
 
--}
-
-
-attach  :: Entity -> Entity -> Maybe Entity
+attach  :: Fabula -> Fabula -> Maybe Fabula
 -- Tag that ent1 is wrapped in ent2. 
 --  If ent1 is already wrapped in an entity, then it comes out with Nothing.
 --  If not, it returns the new ent1.
-attach ((EntityInfo _ (Just _) _ _), _) _ = Nothing -- means ent1 is already a child of an entity.
-attach ((EntityInfo key1 Nothing n1 p1), fab1) ent2 =
-    Just ((EntityInfo key1 (Just ent2) n1 p1), fab1)
+attach (BrightNode{up=Just _) _ = Nothing -- means ent1 is already a child of an entity.
+attach (BrightNode key1 evt1 _ d1 n1 p1) fab2 = 
+    Just $ BrightNode key1 evt1 fab2 d1 n1 p1
 
 
-detach :: Entity -> (Entity, Maybe Entity)
+detach :: Fabula -> (Fabula, Maybe Fabula)
 -- Free the ent1.
 --  If ent1 is wrapped in ent2, then it returns (ent1 without parent, ent2 without ent1)
 --  If ent1 has no parent, then (original ent1, Nothing)
-detach ent1@((EntityInfo _ Nothing _ _), _) = (ent1, Nothing)
-detach ((EntityInfo key1 (Just inEnt1) n1 p1), fab1) =
-    (((EntityInfo key1 Nothing n1 p1), fab1), Just newOutterEnt)
+detach fab1@BrightNode{up=Nothing} = (fab1, Nothing)
+detach (BrightNode key1 evt1 (BrightNode k2 e2 u2 d2 n2 p2) d1 n1 p1) =
+    (BrightNode key1 evt1 Nothing d1 n1 p1, Just newOutterFab)
     where
-        newOutterEnt = case inEnt1 of
-                        (_, (SingleEvent _)) -> 
-                            error "Error: in detach, the first argument attached to a SingleEvent."
-                        (ei, (Fabula evt table)) ->
-                            (ei, Fabula evt $ Map.delete key1 table)
+        newOutterFab = BrightNode k2 e2 u2 (Map.delete key1 d2) n2 p2
 
 
 updateOutterEntity :: Entity -> Maybe Entity
@@ -119,43 +127,12 @@ updateOutterEntity ent1@((EntityInfo key1 inEnt1 n1 p1), fab1) =
 
 
 
---operation on addr
-{-
-pushAddr :: Key -> Entity -> Entity
-pushAddr k ((EntityInfo addr n p), fab) = (EntityInfo (k:addr) n p, fab)
-popAddr  :: Entity -> (Key,Entity)
-popAddr ((EntityInfo (k:addrs) n p), fab) = (k, (EntityInfo addrs n p, fab))
 
-insert :: Either Fabula Entity -> Fabula -> (Entity,Fabula)
-insert f_or_e fabula2@(Fabula evt2 table2 keycntr2) = 
-    (newEntity, newFabula2)
-    where
-        newEntity = (newEntityInfo, finallyAddedFabula)
-        newFabula2 = Fabula evt2 (Map.insert keycntr2 newEntity table2) (keycntr2+1)
-        (newEntityInfo, insertFabula) = 
-            case f_or_e of
-                (Left fab) -> 
-                    (EntityInfo [keycntr2] [] [],    fab)
-                (Right ((EntityInfo addr n p), fab)) ->
-                    (EntityInfo (keycntr2:addr) n p, fab)
-                    -- current method of updating the addr may be wrong
-        finallyAddedFabula = 
-            case insertFabula of
-                (SingleEvent _) -> 
-                    insertFabula
-                (Fabula evt1 table1 keycntr1) ->
-                    Fabula evt1 (fmap (pushAddr keycntr2) table1) keycntr1
-                    -- current method of updating the addr may be wrong
-        
-insert _ (SingleEvent _) = error "Cannot insert a Fabula into a SingleEvent."
--}
+
 {-
-remove :: [Key] -> Fabula -> Fabula
-update :: Entity -> Fabula -> Fabula
-conseqLink :: (Entity, Entity) -> Fabula -> Fabula
-causeLink  :: (Entity, Entity) -> Fabula -> Fabula
-conseqOf :: Entity -> [Entity]
-causeOf  :: Entity -> [Entity]
+putIn
+takeOut
+update
 abstract   :: Entity -> Fabula -> (Entity,Fabula)
 deabstract :: Entity -> Fabula -> Fabula
 -}

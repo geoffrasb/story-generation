@@ -1,6 +1,9 @@
 module Utils (
     Predicate,
     collect_elem_edge_from,
+    fst3,
+    snd3,
+    thd3
 ) where
 
 import qualified Data.Set as Set
@@ -31,6 +34,7 @@ collect_elem_edge_from e childf es =
                       (new_es, new_eds)
                       (map (\nc -> collect_elem_edge_from nc (childf) new_es ) filtered_children)
 
+{-
 data TT = ET | TT Int TT TT deriving(Ord)
 instance Eq TT where
     TT a _ _ == TT b _ _ = a==b
@@ -47,6 +51,7 @@ ref ET = []
 children_of :: TT -> [TT]
 children_of (TT _ a b) = (ref a)++(ref b)
 children_of ET       = []
+-}
 
 dfs_tagging :: (Eq a) => a -> (a -> [a]) -> ([a], Int) -> [(a,Int,Int)]
 dfs_tagging t childf (visited,i) =
