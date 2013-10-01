@@ -1,24 +1,15 @@
+module AlgeGraph (
+    AlgeGraph(..),
+    innerGraph,
+    innerEdgeMap
+) where
+
 import Utils
-import qualified Data.Set as Set
 import qualified Data.List as List
-import qualified Data.Ord as Ord
 import qualified Data.Map as Map
 import qualified Data.Graph.Inductive.Graph as IGraph
 import qualified Data.Graph as Graph
-import qualified Data.Array as Array
 
--- nodes are events, currently not using edge
-
-type Event = Predicate
-
-data AbsEvent = AbsEvent {
-    evt :: Event,
-    fab :: Fabula,
-    imp :: [(IGraph.Node, IGraph.Node)]
-}
-
-
-data Fabula = Fabula (AlgeGraph (Either Event (Fabula, [(IGraph.Node, IGraph.Node)])) ())
 
 
 -- algebraic graph, a for node, b for edge
@@ -28,6 +19,11 @@ data AlgeGraph a b = AlgeGraph {
     nodeKey2innerVtx :: IGraph.Node -> Maybe Graph.Vertex,
     edgeMap   :: Map.Map (IGraph.Node, IGraph.Node) b
 }
+
+innerGraph :: AlgeGraph a b -> Graph.Graph
+innerGraph (AlgeGraph g _ _ _) = g
+innerEdgeMap :: AlgeGraph a b -> Map.Map (IGraph.Node, IGraph.Node) b
+innerEdgeMap (AlgeGraph _ _ _ em) = em
 
 
 instance IGraph.Graph AlgeGraph where
