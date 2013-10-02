@@ -1,7 +1,8 @@
 module AlgeGraph (
     AlgeGraph(..),
     innerGraph,
-    innerEdgeMap
+    innerEdgeMap,
+    empty
 ) where
 
 import Utils
@@ -25,6 +26,7 @@ innerGraph (AlgeGraph g _ _ _) = g
 innerEdgeMap :: AlgeGraph a b -> Map.Map (IGraph.Node, IGraph.Node) b
 innerEdgeMap (AlgeGraph _ _ _ em) = em
 
+empty = IGraph.empty :: AlgeGraph a b
 
 instance IGraph.Graph AlgeGraph where
     empty = AlgeGraph emptyG iv2node node2iv Map.empty
