@@ -4,5 +4,6 @@ import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.Graph.Inductive.Graph as IGraph
 
-
-data TD = TD { a:: Int} deriving (Show)
+_f a 
+    | a>1 || a==0 = True
+    | otherwise   = False

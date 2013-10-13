@@ -7,6 +7,15 @@ module Fabula (
     Fabula
 ) where
 
+{-
+add type of causality, feature between two node
+fabula node type can help planning
+
+ becoming dense or reversely
+
+
+-}
+
 import qualified Data.Set as Set
 import qualified Data.Map as Map
 import qualified Data.List as List
@@ -52,7 +61,10 @@ abstract (Event k ie evt1) em =
                                     else error "Error: The event to be abstracted different with eventMap."
 abstract e@(AbsEvent _ _ _ _ _) em = (e, em)
 
+deabstract :: Event -> Map.Map Key Event -> (Event, Map.Map Key Event)
+
 putIn :: Event -> Event -> Map.Map Key Event -> (Event, Event, Map.Map Key Event)
+--have to modify
 putIn e1 (AbsEvent k2 iv2 ep2 fab2 impl) em =
     (new_e1, new_e2, new_em)
     where
@@ -71,8 +83,8 @@ putIn _ (Event _ _ _) _ =
 takeOut :: (Either Key Event) -> Event -> (Event,Event)
 takeOut (Left k) (AbsEvent d
 -}
+
 {-
-takeOut
 update
 link
 deabstract :: Entity -> Fabula -> Fabula
