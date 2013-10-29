@@ -20,58 +20,47 @@ import qualified Data.Set as Set
         Emotional knowledge
             we get this defaultly or though interpretation(simulation)
 
-what is conflict?
-    fail of fast proving (all in Cms domain, no computation(?))
-what is the reason of an event? (reasonable event?)
-    reason of doing something
-reasonability and emotion?
-    evaluation on people's action
+    Conflict: fail of fast proving
 -}
-
-{- example
-state Cms: under(chair, table)
-fact: under(table, chair) >< under(char, table) (under(A,B) >< under(B,A), A=/=B)
-    how do we rationalize this fact?
-        We find an reasonable event that leads to this fact
-
-event Cms: hit(A,B) -> cry(B)
-fact: hit(A,B) => laugh(B) , laugh(X) >< cry(B)
-    how do we rationalize this event sequence?
-        we search for reasonable link between them
-
--}
-
-class State where
-
-class Event where
 
 -- commonsense is necessarily related to emotion
 --  contrast with cognition(?
 
--- recognization
+recognize :: (Recognizable r, CognitiveSubject cs) => 
+    r -> cs ->
+
+class CognitiveSubject cs where
 
 
+class Recognizable r where
 
+class (Recognizable e) => Event e where
 
+class (Recognizable e) => State s where
 
-class Ontology a where
+-- class Ontology o where
 
-data EventKnowledge = About 
-    { evt :: Event 
-    , precond :: (Set.Set Predicate)
-    , conseq  :: (Set.Set Predicate)
-    } 
+data (Event e, State s) => EventKnowledge e s
+    = About 
+    { evt :: e
+    , precond :: (Set.Set s)
+    , conseq  :: (Set.Set s)
+    } deriving(Show, Eq, Ord)
 
--- Events could be expanded by their prototypes.
-data Prototype = Prototype Event (Set.Set [Event])
+data (Recognizable e) => Prototype e 
+    = Prototype e (Set.Set e)
+    deriving(Show, Eq, Ord)
 
--- We expect numbers of events after an event was happened.
-data Priming = Priming Event (Set.Set Event)
+data (Recognizable e) => Priming e 
+    = Priming e (Set.Set e)
+    deriving(Show, Eq, Ord)
 
 -- mental events?
-data Emotion = Expect Priming
-             | Satisfied Priming
-             | QuasiSat Priming (Set.Set Event)
-             | Confuse (Either (Priming, Set.Set Event) (Enablement, Set.Set Predicate)) 
-             | Default Enablement
-             | Unaware Enablement
+data (Event e, State s) => Emotion e s 
+    = Expect (Priming e)
+    | Satisfied (Priming e)
+    | QuasiSat (Priming e) (Set.Set e)
+    | Confuse (Either ((Priming e), Set.Set e) (EventKnowledge e s, Set.Set s)) 
+    | Default (EventKnowledge e s)
+    | Unaware (EventKnowledge e s)
+    deriving(Show, Eq, Ord)

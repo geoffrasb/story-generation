@@ -1,16 +1,18 @@
 import Utils
-import qualified AlgeGraph as AG
-import qualified Data.Graph.Inductive.Graph as IG
 
-g = IG.empty :: AG.AlgeGraph Int () 
+{-
+class TC1 tc where
 
-g1 = foldl (\g n -> IG.insNode (n,n) g) g [1,2,3,4,5,6,7]
-g2 = foldl (\g (n1,n2) -> IG.insEdge (n1,n2,()) g) g1 [(1,2),(1,3),(7,2),(2,5),(2,6),(3,4)]
-g2' = IG.insEdge (3,1,()) g2
+class TC2 tc where
+    f :: (TC1 tc) => tc -> Bool
 
-mat3 = IG.match 3 g2'
+data (TC1 a) =>TD a =  TD a
+-}
 
-f :: (IG.MContext Int ()) -> IG.Context Int ()
-f x = case x of
-        Nothing -> ([],1,1,[])
-        Just y  -> y
+f a = case
+        case a of
+            [] -> []
+            x:xs -> xs
+      of
+        [] -> "<=1"
+        otherwise -> ">1"
