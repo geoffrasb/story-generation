@@ -26,10 +26,13 @@ import qualified Data.Set as Set
 -- commonsense is necessarily related to emotion
 --  contrast with cognition(?
 
-recognize :: (Recognizable r, CognitiveSubject cs) => 
-    r -> cs ->
 
 class CognitiveSubject cs where
+    recognize :: (Recognizable r) => r -> cs ->
+    interpret
+    reasoning
+    emotionalReaction
+
 
 
 class Recognizable r where
@@ -41,7 +44,7 @@ class (Recognizable e) => State s where
 -- class Ontology o where
 
 data (Event e, State s) => EventKnowledge e s
-    = About 
+    = EventK
     { evt :: e
     , precond :: (Set.Set s)
     , conseq  :: (Set.Set s)
