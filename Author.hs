@@ -16,8 +16,8 @@ import qualified Data.Map as Map
         embellishment storytelling
         tutoring
         try to convey some information
-
 -}
+
 {-
     Current idea: Generate from an event/prototype
     actions of editing: even these actions would compete

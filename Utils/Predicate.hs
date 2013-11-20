@@ -1,11 +1,21 @@
-module Utils.Predicate
-    ( Predicate(..),
-) where
+module Utils.Predicate where
 import qualified Data.Map as Map
 import Data.Char
 
 --fromStr   :: String -> Maybe Predicate
 
+{-
+Q :: World -> Predicate -> Result
+Q w p = 
+    case Map.lookup (name p) w of
+        Nothing ->
+
+Q' :: World -> World -> Predicate -> Result
+
+data Result
+    = Fail
+    | Succ [Var] []
+-}
 {-
 unify :: Predicate -> Predicate -> [Predicate]
 unify p1 p2 = unify' p1 p2 (Just Map.empty)
@@ -32,7 +42,6 @@ unify' p1 p2 varTable =
 atom :: String -> Predicate
 atom s = if (isUpper$head s) then Var s Nothing else Atom s
 
-{-
 fromTuple :: (String, Int, [Predicate]) -> Maybe Predicate
 fromTuple (s, i, ps)
     | i == (length ps) = 
@@ -40,20 +49,29 @@ fromTuple (s, i, ps)
             0         -> Just $ if (isUpper$head s) then Var s Nothing else Atom s
             otherwise -> Just $ Pred s i ps
     | otherwise        = Nothing
--}
 
-{-
+p :: (String, [Predicate]) -> Predicate
+p (s,l) = fromTuple s (length l) l
+
 tuple   :: Predicate -> (String, Int, [Predicate])
 tuple (Atom s)      = (s, 0, [])
 tuple (Var s _)     = (s, 0, [])
 tuple (Pred s i ps) = (s, i, map tuple ps)
--}
-                                         
-data Predicate =                         
-     Pred String Int [Predicate]
-   | Atom String
-   | Var String (Maybe Predicate)
-   deriving(Eq)
+
+
+
+
+type World = Map.Map String [Predicate]
+
+name (Pred s _ _) = s
+name (Atom s)     = s
+name (Var s _)    = s
+
+data Predicate 
+    = Pred String Int [Predicate]
+    | Atom String
+    | Var String (Maybe Predicate)
+    deriving(Eq,Ord)
 
 instance Show Predicate where
     show (Pred s _ args) = s ++ "("++ showlist ++ ")"
